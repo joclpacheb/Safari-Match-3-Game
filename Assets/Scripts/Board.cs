@@ -71,20 +71,74 @@ public class Board : MonoBehaviour
     
     }
 
-    private void SetupPieces()
+    // private void SetupPieces()
+    // {
+    //     for (int x = 0; x < width; x++)
+    //     {
+    //         for (int y = 0; y < height; y++)
+    //         {
+    //             var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)]; //numero inicial exclusivo y nro final inclusivo
+    //             var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity); //setup pieces selecciona una pieza del nuevo arreglo y la pone en el tablero.
+    //             o.transform.parent = transform;
+    //             Pieces[x, y] = o.GetComponent<Piece>();
+    //             Pieces[x, y].Setup(x, y, this);
+    //         }
+    //     }
+    // }
+
+   private void SetupPieces()
     {
+        int maxIterations = 50;
+        int currentIteration = 0;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)]; //numero inicial exclusivo y nro final inclusivo
-                var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity); //setup pieces selecciona una pieza del nuevo arreglo y la pone en el tablero.
-                o.transform.parent = transform;
-                Pieces[x, y] = o.GetComponent<Piece>();
-                Pieces[x, y].Setup(x, y, this);
+                currentIteration = 0;
+                var newPiece = CreatePieceAt(x, y);
+                while(HasPreviousMatches(x, y))
+                {
+                    ClearPieceAt(x, y);
+                    newPiece = CreatePieceAt(x, y);
+                    currentIteration++;
+                    if (currentIteration > maxIterations)
+                    {
+                        break;
+                    }
+                }
             }
         }
     }
+
+    private void ClearPieceAt(int x, int y)
+    {
+        var pieceToClear = Pieces[x, y];
+        Destroy(pieceToClear.gameObject);
+        Pieces[x, y] = null;
+    }
+
+    bool HasPreviousMatches(int posx, int posy)
+    {
+        var downMatches = GetMatchByDirection(posx, posy, new Vector2(0, -1), 2);
+        var leftMatches = GetMatchByDirection(posx, posy, new Vector2(-1, 0), 2);
+
+        if (downMatches == null) downMatches = new List<Piece>();
+        if (leftMatches == null) leftMatches = new List<Piece>();
+
+        return (downMatches.Count > 0 || leftMatches.Count > 0);
+
+    }
+
+        private Piece CreatePieceAt(int x, int y)
+    {
+        var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)];
+        var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity);
+        o.transform.parent = transform;
+        Pieces[x, y] = o.GetComponent<Piece>();
+        Pieces[x, y].Setup(x, y, this);
+        return Pieces[x, y];
+    }
+
 
     //funciones que permiten mover las piezas
 
@@ -130,7 +184,7 @@ public class Board : MonoBehaviour
     //     Pieces[endTile.x, endTile.y] = StarPiece;
     // }
 
-IEnumerator SwapTiles()
+ IEnumerator SwapTiles()
     {
         var StarPiece = Pieces[startTile.x, startTile.y];
         var EndPiece = Pieces[endTile.x, endTile.y];
@@ -150,15 +204,14 @@ IEnumerator SwapTiles()
         startMatches.ForEach(piece =>
         {
             foundMatch = true;
-            Pieces[piece.x, piece.y] = null;
-            Destroy(piece.gameObject);
+            ClearPieceAt(piece.x, piece.y);
         });
 
         endMatches.ForEach(piece =>
         {
             foundMatch = true;
             Pieces[piece.x, piece.y] = null;
-            Destroy(piece.gameObject);
+            ClearPieceAt(piece.x, piece.y);
         });
 
         if (!foundMatch)
