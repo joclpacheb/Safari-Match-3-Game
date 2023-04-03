@@ -14,4 +14,19 @@ public class Tile : MonoBehaviour
         y = y_;
         board = board_;
     }
+
+    public void OnMouseDown() //input del mouse que sirve para moviles para click
+    {
+        board.TileDown(this);
+    }
+
+    public void OnMouseEnter() // mouse over
+    {
+        board.TileOver(this);
+    }
+
+    public void OnMouseUp() //cuando levanta el click 
+    {
+        board.TileUp(this);
+    }
 }
